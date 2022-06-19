@@ -1,0 +1,5 @@
+rootProject.name = 'helloworlds'
+
+file('projects.txt').eachLine { line ->
+  include(line)
+}

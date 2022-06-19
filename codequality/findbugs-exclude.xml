@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <Match>
+        <Package name="~.*\.model"/>
+    </Match>
+    <Match>
+        <Package name="~.*\.event"/>
+    </Match>
+    <Match>
+        <Package name="~.*\.generated"/>
+    </Match>
+    <Match>
+        <Package name="~.*\.domain"/>
+    </Match>
+    <Match>
+        <Package name="~\.com\.ybl\.midas\.midasmockservice.*" />
+    </Match>
+    <Match>
+        <Package name="~\.com\.ybl\.midas\.mockservice.*"/>
+    </Match>
+    <Match>
+        <Bug code="ST,RV,RpC,MS,EI,EI2,SECXXEDOC,SECWTM,CIPINT,SECSHA1,Dm,PADORA,STAIV,SECCRLFLOG,SECPTI,REC,NP,BC,SECECB,HSC,UC,SECSMTP,SKIPPED,OBL"/>
+    </Match>
+</FindBugsFilter>

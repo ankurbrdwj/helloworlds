@@ -1,0 +1,155 @@
+buildscript {
+  repositories {
+    maven { url maven_central }
+    maven { url gradle_plugins_repo }
+    maven { url spring_repo_release }
+  }
+}
+  plugins {
+	id 'org.springframework.boot' version '2.7.0'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'org.asciidoctor.convert' version '1.5.8'
+	id 'java'
+}
+
+group = 'com.ankur'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set('snippetsDir', file("build/generated-snippets"))
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+}
+
+def javaProjects = []
+project.file('projects.txt').eachLine { line ->
+  javaProjects << project(line)
+}
+
+configure(javaProjects) {
+  group = 'com.ankur'
+
+  repositories {
+    maven { url maven_central }
+    maven { url gradle_plugins_repo }
+    maven { url spring_repo_release }
+    maven { url spring_repo_milestone }
+  }
+  apply plugin: 'eclipse'
+  apply plugin: 'idea'
+  apply plugin: 'java'
+  apply plugin: 'maven-publish'
+  apply plugin: 'checkstyle'
+  apply plugin: 'pmd'
+  apply plugin: 'jacoco'
+  apply plugin: 'io.spring.dependency-management'
+
+  sourceCompatibility = java_version
+  targetCompatibility = java_version
+
+
+  dependencyManagement {
+    imports {
+      mavenBom "org.springframework.cloud:spring-cloud-starter-sleuth:${spring_cloud_sleuth_version}"
+    }
+  }
+
+  dependencies {
+    implementation 'org.slf4j:slf4j-api'
+    implementation 'org.slf4j:log4j-over-slf4j'
+    implementation group: 'io.micrometer', name: 'micrometer-core', version: "${micrometer_lib_version}"
+    implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus', version: "${micrometer_lib_version}"
+    implementation group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: "${logback_version}"
+    implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-bootstrap', version: "${cloud_starter_bootstrap_version}"
+    implementation group: 'commons-lang', name: 'commons-lang', version: "${commons_lang_version}"
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.assertj:assertj-core'
+    implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter', version: "${cloud_starter_bootstrap_version}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junit_jupiter_engine_version}"
+    testImplementation "org.junit.platform:junit-platform-runner:${junit_platform_runner_version}"
+    testImplementation group: 'org.mockito', name: 'mockito-inline', version: '4.5.0'
+  }
+
+  test {
+    jacoco {
+      destinationFile = file("$buildDir/jacoco/test/jacocoTest.exec")
+      classDumpDir = file("$buildDir/jacoco/test/classpathdumps")
+      excludes = []
+    }
+  }
+
+  checkstyle {
+    ignoreFailures = false
+    configDirectory = file("$rootProject.projectDir/codequality/")
+    sourceSets{
+      main {
+
+      }
+    }
+  }
+
+  checkstyleMain.exclude("**/generated-sources/**")
+
+  pmd {
+    ignoreFailures = false
+    toolVersion = "${pmd_tool_version}"
+    ruleSetFiles=rootProject.files('codequality/pmd-ruleset.xml')
+    ruleSets = []
+  }
+
+  tasks.withType(Pmd) {
+    reports {
+      xml.enabled = true
+      html.enabled = true
+    }
+  }
+
+  tasks.withType(Checkstyle) {
+    exclude '**/domain/**'
+    exclude '**/mappers/**'
+    exclude '**/model/**'
+    exclude '**/generated/**'
+    exclude '**/mock/**'
+    exclude '**/generated-sources/jaxb/**'
+    exclude '**/mockservice/**'
+  }
+
+  jacocoTestReport {
+    reports {
+      xml {
+        enabled true // coveralls plugin depends on xml format report
+        // destination file("${buildDir}/reports/coverage")
+      }
+      html {
+        enabled true
+        destination file("${buildDir}/reports/coverage")
+      }
+      executionData.from = files("$buildDir/jacoco/test/jacocoTest.exec")
+      executionData.from = files(executionData.findAll {
+        it.exists()
+      })
+    }
+  }
+}
+
